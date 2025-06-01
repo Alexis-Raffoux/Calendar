@@ -1,0 +1,7 @@
+calendar_export*/
+
+__pycache__/
+
+token.pickle
+
+.env
