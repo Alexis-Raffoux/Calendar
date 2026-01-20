@@ -1,4 +1,5 @@
 import os
+import json
 import pickle
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -73,8 +74,20 @@ def import_ics_to_google_calendar(service, ics_file, calendar_id):
     
     for component in cal.walk():
         if component.name == "VEVENT":
-            start = component.get('dtstart').dt
-            end = component.get('dtend').dt
+            dtstart = component.get('dtstart')
+            dtend = component.get('dtend')
+            
+            # Skip events without start time
+            if not dtstart:
+                continue
+                
+            start = dtstart.dt
+            
+            # If no end time, use start time + 1 hour as default
+            if dtend:
+                end = dtend.dt
+            else:
+                end = start + timedelta(hours=1) if isinstance(start, datetime) else start
             
             # Convert to datetime if it's a date
             if isinstance(start, date) and not isinstance(start, datetime):

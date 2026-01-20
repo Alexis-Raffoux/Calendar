@@ -8,6 +8,8 @@ import urllib.parse
 import time
 import json
 import html
+import os
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -212,7 +214,7 @@ def parse_event(event):
             locations.append(line)
         elif '[' in line and ']' in line and any(class_keyword in line.lower() for class_keyword in ["vet", "classe", "group"]):
             class_groups.append(line)
-        elif line and not any(keyword in line.lower() for keyword in ["td", "cm", "e-learning", "journée thématique", "porte", "amphi", "conférences", "congrès", "[", "]", "03", "auto-évaluation en ligne", "travail", "tp", "contrôle", "forum"]):
+        elif line and not any(keyword in line.lower() for keyword in ["td", "cm", "e-learning", "journée thématique", "porte", "amphi", "conférences", "congrès", "[", "]", "03", "auto-évaluation en ligne", "travail", "tp", "tp/td","contrôle", "forum"]):
             teachers.append(line)
     
     return {
@@ -245,6 +247,17 @@ def get_module_color(module):
         "047": "17",  # Orange
         "048": "18",  # Purple
         "049": "19",  # Green
+        
+        "061": "1",    # Red
+        "0610": "1",    # Red
+        "062": "12",  # Blue
+        "063": "13",  # Green
+        "064": "14",  # Yellow
+        "065": "15",  # Purple
+        "066": "16",  # Cyan
+        "067": "17",  # Orange
+        "068": "18",  # Purple
+        "069": "19",  # Green
         "Other": "8"  # Gray
     }
     
@@ -288,9 +301,12 @@ def generate_ical(events, calendar_name):
     now = datetime.now(pytz.utc).strftime("%Y%m%dT%H%M%SZ")
 
     def clean_and_escape(text):
-        # First, decode HTML entities
         decoded = html.unescape(text)
-        # Then, escape special characters for iCalendar
+        
+        if text is None:
+            print("Warning: None value passed to clean_and_escape")
+            return ""
+        
         return decoded.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
 
     for event, details in events:
@@ -306,18 +322,17 @@ def generate_ical(events, calendar_name):
         cleaned_description = clean_and_escape(description)
         cleaned_title = clean_and_escape(details['title'])
         cleaned_category = clean_and_escape(details['category'])
-
+        
         ical.extend([
             "BEGIN:VEVENT",
             f"UID:{event['id']}",
             f"DTSTAMP:{now}",
-            f"DTSTART:{event['start'].replace('-', '').replace(':', '')}",
-            f"DTEND:{event['end'].replace('-', '').replace(':', '')}",  # Corrected this line
+            f"DTSTART:{event['start'].replace('-', '').replace(':', '') if event['start'] else ''}",
+            f"DTEND:{event['end'].replace('-', '').replace(':', '') if event['end'] else ''}",
             f"SUMMARY:{cleaned_title}",
             f"DESCRIPTION:{cleaned_description}",
             f"CATEGORIES:{cleaned_category}",
         ])
-
         ical.append("END:VEVENT")
 
     ical.append("END:VCALENDAR")
